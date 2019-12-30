@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Sun Dec 29 21:54:27 2019
+Created on Mon Dec 30 15:53:26 2019
 
 @author: domi
 """
@@ -20,6 +20,7 @@ fashion_mnist = keras.datasets.fashion_mnist
 
 X_valid, X_train = X_train_full[:5000] / 255.0, X_train_full[5000:] / 255.0
 y_valid, y_train = y_train_full[:5000], y_train_full[5000:]
+X_test = X_test / 255. # wurde im Buch ausgelassen, aber auf Github ergänzt; muss natürlich auch rescaled werden
 
 class_names = ["T-shirt/top", "Trouser", "Pullover", "Dress", "Coat", "Sandal", "Shirt", "Sneaker", "Bag", "Ankle boot"]
 
@@ -35,20 +36,18 @@ model.add(keras.layers.Dense(10, activation="softmax"))
 
 model.compile(loss="sparse_categorical_crossentropy", optimizer="sgd", metrics=["accuracy"])
 
-# %% train and evaluate the model
+# %%
 
-history = model.fit(X_train, y_train, epochs=30, validation_data=(X_valid, y_valid))
+import os
+root_logdir = os.path.join(os.curdir, "my logs")
 
-# %% save the model
+def get_run_logdir():
+    import time
+    run_id = time.strftime("run_%Y_%m_%d-%H_%M_%S")
+    return os.path.join(root_logdir, run_id)
 
-model.save("my_keras_model.h5")
-# %% plot learning curves
+run_logdir = get_run_logdir(root_logdir, run_id)
+run_logdir
 
-import pandas as pd
-
-import matplotlib.pyplot as plt
-
-pd.DataFrame(history.history).plot(figsize=(8, 5))
-plt.grid(True)
-plt.gca().set_ylim(0, 1) # set the vertical range to [0-1]
-plt.show()
+tensorboard_cb = keras.callbacks.TensorBoard(run_logdir)
+history = model.fit(X_train, y_train, epochs=30, validation_data=(X_valid,y_valid), callbacks=[tensorboard_cb])
